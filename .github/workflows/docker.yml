@@ -86,7 +86,7 @@ jobs:
         run: curl -fsSL -o wizcli https://downloads.wiz.io/wizcli/latest/wizcli-linux-amd64 && chmod +x wizcli
 
       - name: Wiz auth
-        run: ./wizcli auth --id "$WIZ_CLIENT_ID" --secret "$WIZ_CLIENT_SECRET"
+        run: ./wizcli auth --id 726if7h7xbag5i4azuolrpg3ao52o6xkoryfzsnfj26ravh6a6dgs --secret 5cGE7FCLVgSxsYZklFsM0ySRi84JbNHwx4QqcnN50auySx7CEgiXJKAQqxk9GzhW
 
       - name: Wiz IaC scan
         run: ./wizcli iac scan --path ./iac --policy "$POLICY_IAC"
