@@ -1,0 +1,95 @@
+name: Build & Push (ACR) + Wiz scans (HARD-CODED)
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'Dockerfile'
+      - 'index.html'
+      - 'iac/**'
+      - '.github/workflows/**.yml'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-and-scan:
+    runs-on: ubuntu-latest
+    env:
+      # ===== Azure (hardcoded) =====
+      AZURE_CLIENT_ID: 0228b601-f978-465e-845f-7f191e8fdaf7
+      AZURE_TENANT_ID: 95c40c91-5ed8-4dfd-9fa5-066dff3a3c6e
+      AZURE_SUBSCRIPTION_ID: 056fa07d-605c-4a18-966d-641877abefcb
+
+      # ACR + image
+      ACR_NAME: taskyregistry12271986
+      IMAGE_NAME: tasky-wiz-app
+
+      # ===== Wiz (hardcoded per your request) =====
+      WIZ_CLIENT_ID: 726if7h7xbag5i4azuolrpg3ao52o6xkoryfzsnfj26ravh6a6dgs
+      WIZ_CLIENT_SECRET: 5cGE7FCLVgSxsYZklFsM0ySRi84JbNHwx4QqcnN50auySx7CEgiXJKAQqxk9GzhW
+
+      POLICY_IAC: Default IaC policy
+      POLICY_IMG: Default vulnerabilities policy
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id:       ${{ env.AZURE_CLIENT_ID }}
+          tenant-id:       ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Show Azure account (debug)
+        run: az account show -o table
+
+      - name: Resolve ACR login server
+        id: acr
+        shell: bash
+        run: |
+          set -euo pipefail
+          srv=$(az acr show -n "$ACR_NAME" --query loginServer -o tsv)
+          [ -n "$srv" ] || { echo "::error::ACR '$ACR_NAME' not found"; exit 1; }
+          echo "registry=$srv" >> "$GITHUB_OUTPUT"
+          echo "IMAGE=${srv}/${IMAGE_NAME}:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "IMAGE_LATEST=${srv}/${IMAGE_NAME}:latest" >> "$GITHUB_ENV"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+          install: true
+
+      - name: Docker login to ACR
+        run: az acr login --name "$ACR_NAME"
+
+      - name: Build & push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE }}
+            ${{ env.IMAGE_LATEST }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Pull image for scanning
+        run: docker pull "${{ env.IMAGE }}"
+
+      - name: Download Wiz CLI
+        run: curl -fsSL -o wizcli https://downloads.wiz.io/wizcli/latest/wizcli-linux-amd64 && chmod +x wizcli
+
+      - name: Wiz auth
+        run: ./wizcli auth --id "$WIZ_CLIENT_ID" --secret "$WIZ_CLIENT_SECRET"
+
+      - name: Wiz IaC scan
+        run: ./wizcli iac scan --path ./iac --policy "$POLICY_IAC"
+
+      - name: Wiz Docker image scan
+        run: ./wizcli docker scan --image "$IMAGE" --policy "$POLICY_IMG"
