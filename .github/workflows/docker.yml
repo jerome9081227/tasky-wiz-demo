@@ -29,8 +29,8 @@ jobs:
       IMAGE_NAME: tasky-wiz-app
 
       # ===== Wiz (hardcoded per your request) =====
-      WIZ_CLIENT_ID: 726if7h7xbag5i4azuolrpg3ao52o6xkoryfzsnfj26ravh6a6dgs
-      WIZ_CLIENT_SECRET: 5cGE7FCLVgSxsYZklFsM0ySRi84JbNHwx4QqcnN50auySx7CEgiXJKAQqxk9GzhW
+      WIZ_CLIENT_ID: 726if7h7xbag5i4azuolrpg3amx6sqpzkd2vz2vt23tgxbi6e7kgs
+      WIZ_CLIENT_SECRET: 5rqEqOVHv3v1VdwpP2OoNk23CAUwjyfS1Rz356vmgDIfJEofRoVfrJiQdiqx4wvlr
 
       POLICY_IAC: Default IaC policy
       POLICY_IMG: Default vulnerabilities policy
@@ -86,7 +86,7 @@ jobs:
         run: curl -fsSL -o wizcli https://downloads.wiz.io/wizcli/latest/wizcli-linux-amd64 && chmod +x wizcli
 
       - name: Wiz auth
-        run: ./wizcli auth --id 726if7h7xbag5i4azuolrpg3ao52o6xkoryfzsnfj26ravh6a6dgs --secret 5cGE7FCLVgSxsYZklFsM0ySRi84JbNHwx4QqcnN50auySx7CEgiXJKAQqxk9GzhW
+        run: ./wizcli auth --id 726if7h7xbag5i4azuolrpg3amx6sqpzkd2vz2vt23tgxbi6e7kgs --secret rqEqOVHv3v1VdwpP2OoNk23CAUwjyfS1Rz356vmgDIfJEofRoVfrJiQdiqx4wvlr
 
       - name: Wiz IaC scan
         run: ./wizcli iac scan --path ./iac --policy "$POLICY_IAC"
